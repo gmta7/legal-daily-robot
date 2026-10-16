@@ -1,0 +1,8 @@
+.env
+.DS_Store
+__pycache__/
+*.pyc
+.pytest_cache/
+event.json
+.wrangler/
+node_modules/

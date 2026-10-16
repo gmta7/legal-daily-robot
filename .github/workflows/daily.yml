@@ -1,0 +1,51 @@
+name: 每日日报
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 同一天再生成一次
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: legal-daily-digest
+  cancel-in-progress: false
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 生成并发送日报
+        env:
+          FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
+          FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DEEPSEEK_MODEL: ${{ secrets.DEEPSEEK_MODEL }}
+          FORCE_DAILY: ${{ github.event_name == 'workflow_dispatch' && inputs.force && 'true' || 'false' }}
+        run: python -m legal_daily daily
+
+      - name: 保存日报留档
+        run: |
+          git config user.name "legal-daily"
+          git config user.email "legal-daily@users.noreply.github.com"
+          git add archive state
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "留档每日法律日报"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push

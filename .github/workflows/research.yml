@@ -1,0 +1,61 @@
+name: 网络法材料
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: 每日材料或每周期刊
+        required: true
+        default: daily
+        type: choice
+        options:
+          - daily
+          - weekly
+      force:
+        description: 同一期再生成一次
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: legal-daily-research
+  cancel-in-progress: false
+
+jobs:
+  materials:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 生成并发送材料
+        env:
+          FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
+          FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DEEPSEEK_MODEL: ${{ secrets.DEEPSEEK_MODEL }}
+          RESEARCH_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.kind || (github.event.schedule == '0 0 * * 1' && 'weekly' || 'daily') }}
+          FORCE_RESEARCH: ${{ github.event_name == 'workflow_dispatch' && inputs.force && 'true' || 'false' }}
+        run: python -m legal_daily research
+
+      - name: 保存材料留档
+        run: |
+          git config user.name "legal-daily"
+          git config user.email "legal-daily@users.noreply.github.com"
+          git add archive state
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "留档网络法材料"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push

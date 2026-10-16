@@ -1,0 +1,50 @@
+name: 飞书消息
+
+on:
+  workflow_dispatch:
+    inputs:
+      event_b64:
+        description: 飞书事件
+        required: true
+        type: string
+  repository_dispatch:
+    types: [feishu_message]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: legal-daily-message
+  cancel-in-progress: false
+
+jobs:
+  reply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 回复飞书消息
+        env:
+          FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
+          FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DEEPSEEK_MODEL: ${{ secrets.DEEPSEEK_MODEL }}
+          FEISHU_EVENT_B64: ${{ github.event.inputs.event_b64 || github.event.client_payload.event_b64 }}
+        run: python -m legal_daily message
+
+      - name: 保存对话状态
+        run: |
+          git config user.name "legal-daily"
+          git config user.email "legal-daily@users.noreply.github.com"
+          git add archive state
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "记录飞书对话状态"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push

@@ -1,0 +1,65 @@
+import json
+import os
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def load_config():
+    path = Path(os.environ.get("LEGAL_DAILY_CONFIG", ROOT / "config.json"))
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise RuntimeError(f"缺少配置文件 {path}") from exc
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"配置文件不是合法 JSON：{path}") from exc
+    if not isinstance(data, dict):
+        raise RuntimeError("配置文件的最外层必须是对象")
+    return data
+
+
+def reader():
+    return load_config().get("reader") or {}
+
+
+def job_settings():
+    return load_config().get("jobs") or {}
+
+
+def news_settings():
+    return load_config().get("news") or {}
+
+
+def journals():
+    names = []
+    for name in load_config().get("journals") or []:
+        cleaned = str(name).strip().strip("《》\"' ")
+        if cleaned and cleaned not in names:
+            names.append(cleaned)
+    return tuple(names)
+
+
+def fresh_graduate_only():
+    return bool(job_settings().get("fresh_graduate_only", True))
+
+
+def job_limit():
+    try:
+        return max(1, int(job_settings().get("max_items", 5)))
+    except (TypeError, ValueError):
+        return 5
+
+
+def news_limit():
+    try:
+        return max(1, int(news_settings().get("max_items", 8)))
+    except (TypeError, ValueError):
+        return 8
+
+
+def regions():
+    return [str(name).strip() for name in (news_settings().get("regions") or []) if str(name).strip()]
+
+
+def enabled_companies():
+    return [str(name).strip() for name in (job_settings().get("companies") or []) if str(name).strip()]
