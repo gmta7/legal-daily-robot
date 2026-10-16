@@ -1,8 +1,8 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.parse import quote_plus
 
-from .careers import collect_career_jobs
-from .config import job_queries, job_topic_terms, news_queries, news_terms
+from .careers import FETCHERS, collect_career_jobs
+from .config import enabled_companies, job_queries, job_topic_terms, news_queries, news_terms
 from .net import fetch_text
 from .rss import parse_rss
 from .textutil import clip, host_of, is_fresh, norm_link, parse_http_date
@@ -134,9 +134,21 @@ def _merge_jobs(career_jobs, rss_jobs):
     return chosen
 
 
+def public_job_queries():
+    known = {name for name, _func in FETCHERS}
+    queries = list(job_queries())
+    for name in enabled_companies():
+        if name in known:
+            continue
+        query = f"{name} 招聘"
+        if query not in queries:
+            queries.append(query)
+    return tuple(queries)
+
+
 def collect_all(fetcher=fetch_text):
     news = collect("news", news_queries(), NEWS_DAYS, fetcher=fetcher)
-    rss_jobs = collect("job", job_queries(), JOB_DAYS, fetcher=fetcher)
+    rss_jobs = collect("job", public_job_queries(), JOB_DAYS, fetcher=fetcher)
     career_jobs = collect_career_jobs(fetcher)
     return news, _merge_jobs(career_jobs, rss_jobs)
 

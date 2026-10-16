@@ -665,6 +665,29 @@ class ConfigTest(unittest.TestCase):
         self.assertIn("劳动法期刊 | 2026-W42", weekly)
         self.assertIn("《法学》2026年第1期目录里没有劳动法题目。", weekly)
 
+    def test_other_company_names_search_the_public_web(self):
+        import json
+        import os
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+
+        from legal_daily.sources import public_job_queries
+
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / "config.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "job_queries": ["劳动法 律师 招聘", "金杜 招聘"],
+                        "jobs": {"companies": ["腾讯", "金杜", "君合"]},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with patch.dict(os.environ, {"LEGAL_DAILY_CONFIG": str(path)}):
+                queries = public_job_queries()
+        self.assertEqual(queries, ("劳动法 律师 招聘", "金杜 招聘", "君合 招聘"))
+
 
 if __name__ == "__main__":
     unittest.main()
