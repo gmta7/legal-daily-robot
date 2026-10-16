@@ -1,3 +1,5 @@
+from .config import digest_title, topic_label
+
 DISCLAIMER = "以上为公开信息整理，供学习求职使用，不构成法律意见。"
 
 SECTION_TITLES = (
@@ -61,7 +63,7 @@ def _source_lines(items, limit=10):
 
 
 def format_digest(date, news, jobs, news_sources=None, job_sources=None):
-    lines = [f"法律×AI 日报 | {date}", ""]
+    lines = [f"{digest_title()} | {date}", ""]
     if not news and news_sources:
         lines.extend(
             [
@@ -90,7 +92,7 @@ def format_digest(date, news, jobs, news_sources=None, job_sources=None):
     if not jobs and job_sources:
         lines.extend(
             [
-                "没有收录成岗位，不能回复「展开岗位」。下面只保留标题里带招聘或实习、且和合规或法律科技有关的线索：",
+                f"没有收录成岗位，不能回复「展开岗位」。下面只保留标题里带招聘或实习、且和{topic_label()}有关的线索：",
                 "",
             ]
         )

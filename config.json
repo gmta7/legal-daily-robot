@@ -1,4 +1,38 @@
 {
+  "product_name": "法律日报",
+  "digest_title": "法律×AI 日报",
+  "research_daily_title": "网络法材料",
+  "research_weekly_title": "网络法期刊",
+  "topic_label": "网络法",
+  "topics": ["网络", "数据", "个人信息", "隐私", "人工智能", "算法", "平台", "数字经济", "互联网", "网信"],
+  "news_queries": [
+    "国家互联网信息办公室 人工智能 OR 生成式人工智能 OR 深度合成 OR 算法备案",
+    "个人信息保护 OR 数据出境 OR 数据安全 规定 OR 办法",
+    "最高人民法院 人工智能 OR 个人信息 OR 数据 典型案例",
+    "法律科技 OR 智慧法院 OR 法律人工智能 OR legaltech",
+    "\"AI Act\" OR FTC \"artificial intelligence\" policy OR guidance"
+  ],
+  "news_terms": ["人工智能", "生成式", "深度合成", "算法", "个人信息", "数据", "法律", "合规", "网信", "法院", "legaltech", "隐私", "ai act", "ftc", "ai"],
+  "job_queries": [
+    "数据合规 法务 招聘",
+    "数据合规 律师 实习",
+    "法律科技 招聘",
+    "法律人工智能 招聘",
+    "幂律 招聘",
+    "华宇元典 招聘"
+  ],
+  "job_title_terms": ["法务", "律师", "隐私", "合规", "法律", "知识产权"],
+  "job_search_terms": ["法务", "合规", "隐私"],
+  "job_topic_terms": ["法律", "法务", "律师", "合规", "幂律", "华宇", "元典", "秘塔", "智合", "法睿", "legaltech", "隐私", "算法", "数据"],
+  "research_queries": [
+    "网络法 OR 数据法 OR 人工智能法 草案 OR 征求意见稿",
+    "北京互联网法院 OR 杭州互联网法院 OR 广州互联网法院",
+    "国家互联网信息办公室 规定 OR 办法 OR 通知 人工智能 OR 数据 OR 算法",
+    "中国人大网 法律草案 数据 OR 网络 OR 人工智能 OR 个人信息",
+    "法制网 数据 OR 人工智能 OR 网络 评论 OR 时评",
+    "人民网 数据安全 OR 人工智能 法律 OR 法治"
+  ],
+  "journal_topics": ["数据", "人工智能", "个人信息", "网络", "算法", "平台", "数字经济", "隐私", "互联网", "网信", "privacy", "artificial", "platform", "internet", "algorithm", "data"],
   "reader": {
     "background": "软件工程本科、应届法律硕士，没有全职工作经验",
     "goal": "合规和 Legaltech 求职",

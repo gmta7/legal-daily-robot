@@ -608,7 +608,62 @@ class ConfigTest(unittest.TestCase):
             with patch.dict(os.environ, {"LEGAL_DAILY_CONFIG": str(path)}):
                 self.assertEqual(journals(), ("中国法学", "China Legal Science"))
                 kept = classify_opening("法务", "", "3年以上工作经验")
-        self.assertEqual(kept["experience"], "需经验")
+                self.assertEqual(kept["experience"], "需经验")
+
+    def test_custom_topics_keep_matching_news_and_titles(self):
+        import json
+        import os
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+
+        from legal_daily.format import format_digest
+        from legal_daily.research import format_research
+        from legal_daily.sources import collect
+
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / "config.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "digest_title": "劳动法日报",
+                        "research_weekly_title": "劳动法期刊",
+                        "topic_label": "劳动法",
+                        "news_terms": ["工伤"],
+                        "job_topic_terms": ["劳动"],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with patch.dict(os.environ, {"LEGAL_DAILY_CONFIG": str(path)}):
+                def fetcher(_url):
+                    return """
+                    <rss><channel>
+                      <item>
+                        <title>工伤认定办法公开征求意见</title>
+                        <link>https://www.court.gov.cn/labor</link>
+                        <description>劳动</description>
+                      </item>
+                      <item>
+                        <title>生成式人工智能新规</title>
+                        <link>https://www.cac.gov.cn/ai</link>
+                        <description>算法</description>
+                      </item>
+                    </channel></rss>
+                    """
+
+                items = collect("news", ["劳动"], 5, fetcher=fetcher)
+                self.assertEqual([item["title"] for item in items], ["工伤认定办法公开征求意见"])
+                digest = format_digest("2026-10-16", [], [])
+                weekly = format_research(
+                    "weekly",
+                    "2026-W42",
+                    [],
+                    [],
+                    quiet=[{"label": "《法学》2026年第1期", "link": "https://example.edu/a", "reason": "empty"}],
+                )
+        self.assertIn("劳动法日报 | 2026-10-16", digest)
+        self.assertIn("劳动法期刊 | 2026-W42", weekly)
+        self.assertIn("《法学》2026年第1期目录里没有劳动法题目。", weekly)
 
 
 if __name__ == "__main__":

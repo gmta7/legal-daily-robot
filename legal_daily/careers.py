@@ -3,11 +3,9 @@ import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.parse import urlencode
 
-from .config import enabled_companies, fresh_graduate_only
+from .config import enabled_companies, fresh_graduate_only, job_search_terms, job_title_terms
 from .textutil import clip, one_line
 
-KEYWORDS = ("法务", "合规", "隐私")
-TITLE_TERMS = ("法务", "律师", "隐私", "合规", "法律", "知识产权")
 PAGE_SIZE = 20
 PER_COMPANY = 8
 TOTAL_CAP = 48
@@ -49,7 +47,7 @@ def _post_form(fetcher, url, body, headers):
 
 def _relevant(title):
     text = one_line(title)
-    return any(term in text for term in TITLE_TERMS)
+    return any(term.lower() in text.lower() for term in job_title_terms())
 
 
 def _cn_number(token):
@@ -206,7 +204,7 @@ def _detail(*parts):
 def _feishu(fetcher, company, url, origin, link_of, extra_body, channel=""):
     found = []
     headers = {"Origin": origin, "Referer": origin + "/"}
-    for keyword in KEYWORDS:
+    for keyword in job_search_terms():
         body = {
             "keyword": keyword,
             "limit": PAGE_SIZE,
@@ -274,7 +272,7 @@ def _xiaomi(fetcher):
 
 def _tencent(fetcher):
     found = []
-    for keyword in KEYWORDS:
+    for keyword in job_search_terms():
         payload = _post_json(
             fetcher,
             "https://join.qq.com/api/v1/position/searchPosition",
@@ -300,7 +298,7 @@ def _tencent(fetcher):
 
 def _netease(fetcher):
     found = []
-    for keyword in KEYWORDS:
+    for keyword in job_search_terms():
         payload = _post_json(
             fetcher,
             "https://hr.163.com/api/hr163/position/queryPage",
@@ -325,7 +323,7 @@ def _netease(fetcher):
 
 def _oppo(fetcher):
     found = []
-    for keyword in KEYWORDS:
+    for keyword in job_search_terms():
         payload = _post_json(
             fetcher,
             "https://careers.oppo.com/openapi/position/pageNew",
@@ -352,7 +350,7 @@ def _oppo(fetcher):
 def _baidu(fetcher):
     found = []
     channels = (("SOCIAL", "社招"), ("GRADUATE", "校招"), ("INTERN", "实习"))
-    for keyword in KEYWORDS:
+    for keyword in job_search_terms():
         for recruit_type, channel in channels:
             payload = _post_form(
                 fetcher,
@@ -384,7 +382,7 @@ def _baidu(fetcher):
 
 def _meituan(fetcher):
     found = []
-    for keyword in KEYWORDS:
+    for keyword in job_search_terms():
         payload = _post_json(
             fetcher,
             "https://zhaopin.meituan.com/api/official/job/getJobList",
@@ -413,7 +411,7 @@ def _meituan(fetcher):
 
 def _didi(fetcher):
     found = []
-    for keyword in KEYWORDS:
+    for keyword in job_search_terms():
         query = urlencode({"page": 1, "size": PAGE_SIZE, "jobName": keyword})
         raw = _read(
             fetcher,
@@ -439,7 +437,7 @@ def _didi(fetcher):
 
 def _ant(fetcher):
     found = []
-    for keyword in KEYWORDS:
+    for keyword in job_search_terms():
         payload = _post_json(
             fetcher,
             "https://hrcareersweb.antgroup.com/api/social/position/search",

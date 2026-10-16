@@ -63,3 +63,73 @@ def regions():
 
 def enabled_companies():
     return [str(name).strip() for name in (job_settings().get("companies") or []) if str(name).strip()]
+
+
+def _strings(value):
+    found = []
+    for item in value or []:
+        text = str(item).strip()
+        if text and text not in found:
+            found.append(text)
+    return tuple(found)
+
+
+def _text(key, fallback):
+    value = str(load_config().get(key) or "").strip()
+    return value or fallback
+
+
+def product_name():
+    return _text("product_name", "法律日报")
+
+
+def digest_title():
+    return _text("digest_title", product_name())
+
+
+def research_daily_title():
+    return _text("research_daily_title", "专题材料")
+
+
+def research_weekly_title():
+    return _text("research_weekly_title", "期刊目录")
+
+
+def topic_label():
+    return _text("topic_label", "主题")
+
+
+def topics():
+    return _strings(load_config().get("topics"))
+
+
+def news_queries():
+    return _strings(load_config().get("news_queries"))
+
+
+def job_queries():
+    return _strings(load_config().get("job_queries"))
+
+
+def research_queries():
+    return _strings(load_config().get("research_queries"))
+
+
+def news_terms():
+    return _strings(load_config().get("news_terms")) or topics()
+
+
+def job_title_terms():
+    return _strings(load_config().get("job_title_terms")) or ("法务", "律师", "法律")
+
+
+def job_search_terms():
+    return _strings(load_config().get("job_search_terms")) or job_title_terms()
+
+
+def job_topic_terms():
+    return _strings(load_config().get("job_topic_terms")) or topics()
+
+
+def journal_topics():
+    return _strings(load_config().get("journal_topics")) or topics()

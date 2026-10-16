@@ -1,7 +1,16 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
-from .config import journals, reader
+from .config import (
+    journal_topics,
+    journals,
+    reader,
+    research_daily_title,
+    research_queries,
+    research_weekly_title,
+    topic_label,
+    topics,
+)
 from .daily import _notify
 from .llm import complete_json
 from .net import fetch_text
@@ -13,40 +22,12 @@ from .toc import collect_catalogs
 
 JOURNALS = journals()
 
-HOT_QUERIES = (
-    "网络法 OR 数据法 OR 人工智能法 草案 OR 征求意见稿",
-    "北京互联网法院 OR 杭州互联网法院 OR 广州互联网法院",
-    "国家互联网信息办公室 规定 OR 办法 OR 通知 人工智能 OR 数据 OR 算法",
-    "中国人大网 法律草案 数据 OR 网络 OR 人工智能 OR 个人信息",
-    "法制网 数据 OR 人工智能 OR 网络 评论 OR 时评",
-    "人民网 数据安全 OR 人工智能 法律 OR 法治",
-)
-
-CYBER_TERMS = (
-    "网络",
-    "数据",
-    "个人信息",
-    "隐私",
-    "人工智能",
-    "算法",
-    "平台",
-    "数字经济",
-    "互联网",
-    "网信",
-    "privacy",
-    "artificial",
-    "platform",
-    "internet",
-    "algorithm",
-    "data",
-)
-
 SECTIONS = {"新规", "案例", "时评", "论文", "活动"}
 WEEKLY_DAYS = 90
 
 def research_system():
     profile = reader()
-    return f"""你是网络法资料编辑。读者是{profile.get("background") or "法律信息读者"}，目标是{profile.get("goal") or "了解法律动态"}。
+    return f"""你是{research_daily_title()}编辑。读者是{profile.get("background") or "法律信息读者"}，目标是{profile.get("goal") or "了解法律动态"}。
 你只能使用给出的材料。材料里没有的题目、作者、期刊、法院和文号不要写。
 link 必须与材料中的 link 完全一致。
 不要编造论文，也不要输出期刊全文。材料不足可以返回空数组。
@@ -54,9 +35,9 @@ link 必须与材料中的 link 完全一致。
 
 DAILY_GUIDE = """
 输出 JSON：{"items":[{"section":"新规|案例|时评|论文|活动","title":"","source":"","one_line":"","link":""}]}
-最多 8 条，只收与网络法、数据、个人信息、人工智能、算法、平台或数字经济有关的材料。
-新规是法律、行政法规、规章、草案或征求意见稿。案例优先北京、杭州、广州互联网法院。
-时评来自法制网、人民网、网信办或主流媒体。论文只有材料明确写出某期刊文章时才写入。
+最多 8 条，只收与这些主题有关的材料：{topics}。
+新规是法律、行政法规、规章、草案或征求意见稿。
+时评来自主流媒体、监管部门或专业网站。论文只有材料明确写出某期刊文章时才写入。
 活动是学术沙龙、工作坊或法学院的预告和新闻。无关内容不要写。
 """
 
@@ -64,8 +45,8 @@ WEEKLY_GUIDE = """
 输出 JSON：{"items":[{"section":"论文","title":"","source":"","one_line":"","link":""}]}
 最多 8 条。每一条都必须是下面某一本期刊上的文章或该期公开目录，source 只能填这些名字之一，不要加书名号：
 {journals}
-主题必须与网络法、数据、个人信息、人工智能、算法、平台或数字经济有关。
-source 用材料里出现的最完整期刊名。出现「中国法学」时写中国法学，不要写成法学。
+主题必须与这些方向有关：{topics}。
+source 用材料里出现的最完整期刊名。短名字如果只是更长期刊名的一部分，就写更长的那个。
 如果页面只是整期目录、没有单篇题目，title 写期刊名和期次，one_line 写「公开页面没有拆出单篇题目」。
 """
 
@@ -74,26 +55,37 @@ def _journal_key(value):
     return one_line(value).strip("《》\"' ")
 
 
+def _or_clause(terms):
+    chosen = [term for term in terms if term]
+    if not chosen:
+        return ""
+    return "(" + " OR ".join(chosen) + ")"
+
+
 def journal_queries():
-    chinese = [name for name in JOURNALS if name not in ("China Legal Science", "Frontiers of Law in China")]
+    names = journals()
+    theme = journal_topics()
+    chinese = [name for name in names if not str(name).isascii()]
+    english = [name for name in names if str(name).isascii()]
+    chinese_theme = [term for term in theme if not str(term).isascii()] or list(theme)
+    english_theme = [term for term in theme if str(term).isascii()] or list(theme)
     queries = []
-    topic = "(数据 OR 人工智能 OR 个人信息 OR 网络 OR 算法 OR 平台 OR 数字经济)"
     chunk = []
     for name in chinese:
         chunk.append(f'"{name}"')
         if len(chunk) == 4:
-            queries.append(" OR ".join(chunk) + " " + topic)
+            queries.append(" OR ".join(chunk) + " " + _or_clause(chinese_theme))
             chunk = []
     if chunk:
-        queries.append(" OR ".join(chunk) + " " + topic)
-    queries.append('"China Legal Science" (data OR privacy OR platform OR internet OR algorithm)')
-    queries.append('"Frontiers of Law in China" (data OR privacy OR platform OR internet OR algorithm)')
-    return tuple(queries)
+        queries.append(" OR ".join(chunk) + " " + _or_clause(chinese_theme))
+    for name in english:
+        queries.append(f'"{name}" {_or_clause(english_theme)}'.strip())
+    return tuple(query for query in queries if query.strip())
 
 
-def _cyber(item):
+def _matches(item, terms):
     text = f"{item.get('title') or ''} {item.get('snippet') or ''}".lower()
-    return any(term.lower() in text for term in CYBER_TERMS)
+    return any(str(term).lower() in text for term in terms)
 
 
 def _journal_at(text, name):
@@ -112,7 +104,7 @@ def _journal_at(text, name):
 
 def _mentions_journal(item):
     text = f"{item.get('title') or ''} {item.get('snippet') or ''}"
-    return any(_journal_at(text, name) for name in JOURNALS)
+    return any(_journal_at(text, name) for name in journals())
 
 
 def _feed_urls(query, days):
@@ -122,8 +114,9 @@ def _feed_urls(query, days):
     return [bing, google]
 
 
-def collect_materials(queries, days, fetcher, seen, require_journal=False):
+def collect_materials(queries, days, fetcher, seen, require_journal=False, terms=None):
     tasks = [(query, url) for query in queries for url in _feed_urls(query, days)]
+    theme = terms or topics()
     found = []
     with ThreadPoolExecutor(max_workers=6) as pool:
         futures = {pool.submit(fetcher, url): (query, url) for query, url in tasks}
@@ -148,7 +141,7 @@ def collect_materials(queries, days, fetcher, seen, require_journal=False):
                     "date": item["date"],
                     "snippet": item["snippet"],
                 }
-                if not _cyber(candidate):
+                if theme and not _matches(candidate, theme):
                     continue
                 if require_journal and not _mentions_journal(candidate):
                     continue
@@ -163,7 +156,7 @@ def collect_materials(queries, days, fetcher, seen, require_journal=False):
             continue
         deduped[key] = _keep_better(deduped[key], item)
     items = [deduped[key] for key in order][:24]
-    print(f"网络法材料 {len(items)} 条")
+    print(f"{research_daily_title()} {len(items)} 条")
     for item in items:
         print(f"材料 {item.get('date') or ''} {item['title']}")
     return items
@@ -171,7 +164,7 @@ def collect_materials(queries, days, fetcher, seen, require_journal=False):
 
 def _match_journal(value):
     text = _journal_key(value)
-    matches = [name for name in JOURNALS if _journal_at(text, name)]
+    matches = [name for name in journals() if _journal_at(text, name)]
     if not matches:
         return ""
     return max(matches, key=len)
@@ -216,10 +209,10 @@ def format_research(mode, key, items, sources, quiet=None, failures=None):
     quiet = quiet or []
     failures = failures or []
     if mode == "weekly":
-        lines = [f"网络法期刊 | {key}", ""]
+        lines = [f"{research_weekly_title()} | {key}", ""]
         empty = f"近 {WEEKLY_DAYS} 天的目录页和公开新闻里没有检索到相关期刊文章。"
     else:
-        lines = [f"网络法材料 | {key}", ""]
+        lines = [f"{research_daily_title()} | {key}", ""]
         empty = "今日无新的论文材料。"
     if items:
         current = ""
@@ -238,7 +231,7 @@ def format_research(mode, key, items, sources, quiet=None, failures=None):
             if issue.get("reason") == "unparsed":
                 lines.append(f"{issue['label']}的公开页面没有拆出单篇题目。")
             else:
-                lines.append(f"{issue['label']}目录里没有网络法题目。")
+                lines.append(f"{issue['label']}目录里没有{topic_label()}题目。")
             lines.append(issue["link"])
             lines.append("")
     if mode == "weekly" and failures:
@@ -264,9 +257,11 @@ def format_research(mode, key, items, sources, quiet=None, failures=None):
 
 def _prompt(mode, materials):
     if mode == "weekly":
-        guide = WEEKLY_GUIDE.replace("{journals}", "、".join(JOURNALS))
+        guide = WEEKLY_GUIDE.replace("{journals}", "、".join(journals())).replace(
+            "{topics}", "、".join(journal_topics()) or "配置里的主题"
+        )
     else:
-        guide = DAILY_GUIDE
+        guide = DAILY_GUIDE.replace("{topics}", "、".join(topics()) or "配置里的主题")
     return guide + "\n下面是检索到的材料：\n\n" + (materials or "（没有材料）")
 
 
@@ -288,7 +283,14 @@ def _material_block(items):
 
 def _weekly_news(fetcher, seen, failures):
     try:
-        return collect_materials(journal_queries(), WEEKLY_DAYS, fetcher, seen, require_journal=True)
+        return collect_materials(
+            journal_queries(),
+            WEEKLY_DAYS,
+            fetcher,
+            seen,
+            require_journal=True,
+            terms=journal_topics(),
+        )
     except Exception as exc:
         print(f"新闻检索没有完成 {exc}")
         failures.append({"text": "公开新闻检索没有完成。", "link": ""})
@@ -310,7 +312,7 @@ def run_research(mode="daily", force=False, fetcher=fetch_text):
         quiet = []
         failures = []
         if mode == "weekly":
-            catalog = collect_catalogs(fetcher, WEEKLY_DAYS, JOURNALS, CYBER_TERMS, seen)
+            catalog = collect_catalogs(fetcher, WEEKLY_DAYS, journals(), journal_topics(), seen)
             items = list(catalog["articles"])
             quiet = catalog["quiet"]
             failures = catalog["failures"]
@@ -328,7 +330,7 @@ def run_research(mode="daily", force=False, fetcher=fetch_text):
                     if norm_link(extra["link"]) not in known:
                         items.append(extra)
         else:
-            sources = collect_materials(HOT_QUERIES, 5, fetcher, seen)
+            sources = collect_materials(research_queries(), 5, fetcher, seen, terms=topics())
             if not sources:
                 items = []
             else:
@@ -350,7 +352,7 @@ def run_research(mode="daily", force=False, fetcher=fetch_text):
     except Exception:
         if not json_path.exists():
             try:
-                _notify("这次网络法材料没有生成成功。材料里没有的论文不会被编造。")
+                _notify(f"这次{research_daily_title()}没有生成成功。材料里没有的论文不会被编造。")
             except Exception as exc:
                 print(f"失败通知没有发出去: {exc}")
         raise

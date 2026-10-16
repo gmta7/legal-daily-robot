@@ -2,6 +2,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.parse import quote_plus
 
 from .careers import collect_career_jobs
+from .config import job_queries, job_topic_terms, news_queries, news_terms
 from .net import fetch_text
 from .rss import parse_rss
 from .textutil import clip, host_of, is_fresh, norm_link, parse_http_date
@@ -9,56 +10,6 @@ from .textutil import clip, host_of, is_fresh, norm_link, parse_http_date
 NEWS_DAYS = 5
 JOB_DAYS = 30
 
-NEWS_QUERIES = [
-    "国家互联网信息办公室 人工智能 OR 生成式人工智能 OR 深度合成 OR 算法备案",
-    "个人信息保护 OR 数据出境 OR 数据安全 规定 OR 办法",
-    "最高人民法院 人工智能 OR 个人信息 OR 数据 典型案例",
-    "法律科技 OR 智慧法院 OR 法律人工智能 OR legaltech",
-    '"AI Act" OR FTC "artificial intelligence" policy OR guidance',
-]
-
-JOB_QUERIES = [
-    "数据合规 法务 招聘",
-    "数据合规 律师 实习",
-    "法律科技 招聘",
-    "法律人工智能 招聘",
-    "幂律 招聘",
-    "华宇元典 招聘",
-]
-
-NEWS_TERMS = (
-    "人工智能",
-    "生成式",
-    "深度合成",
-    "算法",
-    "个人信息",
-    "数据",
-    "法律",
-    "合规",
-    "网信",
-    "法院",
-    "legaltech",
-    "隐私",
-    "ai act",
-    "ftc",
-    "ai",
-)
-JOB_TOPIC = (
-    "法律",
-    "法务",
-    "律师",
-    "合规",
-    "幂律",
-    "华宇",
-    "元典",
-    "秘塔",
-    "智合",
-    "法睿",
-    "legaltech",
-    "隐私",
-    "算法",
-    "数据",
-)
 JOB_HIRING = ("招聘", "实习", "校招", "社招", "职位")
 JUNK_HOSTS = (
     "zhihu.com",
@@ -99,8 +50,8 @@ def accept_item(kind, item):
     text = _blob(item)
     if kind == "job":
         title = (item.get("title") or "").lower()
-        return any(term in title for term in JOB_HIRING) and any(term in text for term in JOB_TOPIC)
-    return any(term in text for term in NEWS_TERMS)
+        return any(term.lower() in title for term in JOB_HIRING) and any(term.lower() in text for term in job_topic_terms())
+    return any(term.lower() in text for term in news_terms())
 
 
 def _link_score(link):
@@ -184,8 +135,8 @@ def _merge_jobs(career_jobs, rss_jobs):
 
 
 def collect_all(fetcher=fetch_text):
-    news = collect("news", NEWS_QUERIES, NEWS_DAYS, fetcher=fetcher)
-    rss_jobs = collect("job", JOB_QUERIES, JOB_DAYS, fetcher=fetcher)
+    news = collect("news", news_queries(), NEWS_DAYS, fetcher=fetcher)
+    rss_jobs = collect("job", job_queries(), JOB_DAYS, fetcher=fetcher)
     career_jobs = collect_career_jobs(fetcher)
     return news, _merge_jobs(career_jobs, rss_jobs)
 

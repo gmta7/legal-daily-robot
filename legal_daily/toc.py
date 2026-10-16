@@ -31,7 +31,7 @@ def collect_catalogs(fetcher, days, journals, terms, seen):
             continue
         seen_titles.add(key)
         deduped.append(item)
-    print(f"期刊目录 {len(deduped)} 篇，无网络法题目 {len(quiet)} 期，打不开 {len(failures)} 处")
+    print(f"期刊目录 {len(deduped)} 篇，无主题题目 {len(quiet)} 期，打不开 {len(failures)} 处")
     return {"articles": deduped[:24], "quiet": quiet[:8], "failures": failures}
 
 

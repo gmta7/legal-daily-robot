@@ -5,7 +5,7 @@ import time
 import urllib.error
 import urllib.request
 
-from .config import fresh_graduate_only, job_limit, news_limit, reader, regions
+from .config import fresh_graduate_only, job_limit, news_limit, reader, regions, topics
 from .net import UA
 
 RETRY_STATUS = {429, 500, 502, 503, 504}
@@ -67,14 +67,15 @@ def schema_text():
         else "需要工作经验的岗位可以写入。experience 写应届、经验不限、未写明或需经验，不要猜一个具体年限。"
     )
     place = "、".join(regions()) or "不限"
+    theme = "、".join(topics()) or "配置里的主题"
     return f"""{SCHEMA}
-news 最多 {news_limit()} 条，按对读者的重要性从高到低。材料只要与人工智能法律、数据或个人信息合规、算法治理、法律科技相关，就要写入。不够重大的也要写，important 设为 false。只有完全无关时，news 才可以是空数组。
-important 只在这些情况为 true：法律或行政法规公布或施行；网信、数据或最高法直接规制生成式AI、算法、深度合成、训练数据或法律AI；与AI或数据合规直接相关的处罚通报；对中国企业有直接域外影响的国外AI立法生效或新文本。
+news 最多 {news_limit()} 条，按对读者的重要性从高到低。材料只要与这些主题相关，就要写入：{theme}。不够重大的也要写，important 设为 false。只有完全无关时，news 才可以是空数组。
+important 只在这些情况为 true：法律或行政法规公布或施行；监管部门就上述主题发布直接规制、处罚或典型案例；对读者有直接影响的国外立法生效或公布新文本。
 国外条目的 one_line_zh 用中文转述原文要点，title_en 和 one_line_en 保留英文要点。地方材料优先这些地区：{place}。
 jobs 最多 {job_limit()} 条。必须看得出具体单位和职位，并且对得上上面的偏好顺序。只有行业新闻、没有具体岗位的，不要写入 jobs。
 {experience}
 employment 按材料里的实习或正式来写。
-alert 只在材料写明红圈所或头部法律AI公司开放招聘、且截止日期在 14 天内时为 true。材料没写截止日期就让 deadline 为空，不要猜。
+alert 只在材料写明读者关心的单位开放招聘、且截止日期在 14 天内时为 true。材料没写截止日期就让 deadline 为空，不要猜。
 """
 
 
