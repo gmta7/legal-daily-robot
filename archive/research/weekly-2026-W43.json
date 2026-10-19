@@ -1,0 +1,52 @@
+{
+  "mode": "weekly",
+  "key": "2026-W43",
+  "items": [
+    {
+      "section": "论文",
+      "title": "基于标准的人工智能规制模式、挑战及回应",
+      "source": "中外法学",
+      "one_line": "高秦伟",
+      "link": "http://iolaw.cssn.cn/fxyjdt/202609/t20260928_6071026.shtml"
+    },
+    {
+      "section": "论文",
+      "title": "数字平台监管制度外溢与贸易应对策略研究",
+      "source": "中外法学",
+      "one_line": "高薇",
+      "link": "http://iolaw.cssn.cn/fxyjdt/202609/t20260928_6071026.shtml"
+    },
+    {
+      "section": "论文",
+      "title": "周维栋（中国人民大学纪检监察学院讲师,当代政党研究平台研究员）",
+      "source": "现代法学",
+      "one_line": "作者",
+      "link": "http://iolaw.cssn.cn/fxyjdt/202608/t20260831_6065192.shtml"
+    },
+    {
+      "section": "论文",
+      "title": "论人工智能证据的独立性",
+      "source": "中国法学",
+      "one_line": "郭雪慧",
+      "link": "https://clsjp.chinalaw.org.cn/portal/article/index.html?id=12793&cid=1940"
+    }
+  ],
+  "quiet": [
+    {
+      "label": "《法学杂志》2026年第5期",
+      "link": "http://iolaw.cssn.cn/fxyjdt/202609/t20260917_6067685.shtml",
+      "reason": "empty"
+    },
+    {
+      "label": "《比较法研究》2026年第4期",
+      "link": "http://iolaw.cssn.cn/fxyjdt/202609/t20260901_6065469.shtml",
+      "reason": "empty"
+    },
+    {
+      "label": "《China Legal Science》2026年第5期",
+      "link": "https://clsjp.chinalaw.org.cn/portal/list/index.html?id=1943",
+      "reason": "unparsed"
+    }
+  ],
+  "failures": []
+}
