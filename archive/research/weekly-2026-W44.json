@@ -1,0 +1,28 @@
+{
+  "mode": "weekly",
+  "key": "2026-W44",
+  "items": [],
+  "quiet": [
+    {
+      "label": "《法学杂志》2026年第5期",
+      "link": "http://iolaw.cssn.cn/fxyjdt/202609/t20260917_6067685.shtml",
+      "reason": "empty"
+    },
+    {
+      "label": "《比较法研究》2026年第4期",
+      "link": "http://iolaw.cssn.cn/fxyjdt/202609/t20260901_6065469.shtml",
+      "reason": "empty"
+    },
+    {
+      "label": "《China Legal Science》2026年第5期",
+      "link": "https://clsjp.chinalaw.org.cn/portal/list/index.html?id=1943",
+      "reason": "unparsed"
+    }
+  ],
+  "failures": [
+    {
+      "text": "公开新闻没有整理完成。目录页上的论文仍然列在上面。",
+      "link": ""
+    }
+  ]
+}
