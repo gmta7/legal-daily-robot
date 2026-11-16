@@ -1,0 +1,21 @@
+{
+  "mode": "weekly",
+  "key": "2026-W47",
+  "items": [
+    {
+      "section": "论文",
+      "title": "张涛（中国政法大学数据法学院）",
+      "source": "比较法研究",
+      "one_line": "作者",
+      "link": "http://iolaw.cssn.cn/fxyjdt/202611/t20261109_6077218.shtml"
+    }
+  ],
+  "quiet": [
+    {
+      "label": "《政治与法律》2026年第11期",
+      "link": "http://iolaw.cssn.cn/fxyjdt/202611/t20261109_6077215.shtml",
+      "reason": "empty"
+    }
+  ],
+  "failures": []
+}
